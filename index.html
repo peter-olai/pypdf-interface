@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pypdf Web UI - Merge PDFs</title>
+    <title>pypdf Web UI - PDF Tools</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,12 +16,13 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 700px;
+            max-width: 800px;
             margin: auto;
         }
         h1 {
             color: #333;
             text-align: center;
+            margin-bottom: 20px;
         }
         .file-input-area {
             margin-bottom: 20px;
@@ -98,7 +99,7 @@
         .remove-file-btn:hover {
             background-color: #c82333;
         }
-        button#mergeBtn {
+        .action-button {
             background-color: #28a745;
             color: white;
             padding: 10px 15px;
@@ -110,7 +111,7 @@
             width: 100%;
             margin-top: 20px;
         }
-        button#mergeBtn:hover {
+        .action-button:hover {
             background-color: #218838;
         }
         #status {
@@ -129,83 +130,262 @@
             border-color: #28a745;
             background-color: #e6ffed;
         }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tab.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Split PDF specific styles */
+        .pdf-page-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .page-thumbnail {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+        .page-thumbnail.selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .page-thumbnail-number {
+            position: absolute;
+            bottom: 5px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .page-checkbox {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .page-preview {
+            width: 80px;
+            height: 100px;
+            background-color: #f8f9fa;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-selection-options {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .option-label {
+            font-weight: bold;
+        }
+        #customRangeInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        .radio-option {
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PDF Merger</h1>
+        <h1>PDF Tools</h1>
         
-        <div class="file-input-area" id="fileDropArea">
-            <label for="pdfFilesInput">Drag & Drop PDF files here, or click to select</label>
-            <input type="file" id="pdfFilesInput" accept=".pdf" multiple>
-            <span class="file-input-button" onclick="document.getElementById('pdfFilesInput').click()">Choose Files</span>
-        </div>
-
-        <div id="filePreviewContainer">
-            <p style="text-align: center; color: #6c757d;">Selected files will appear here. Drag to reorder.</p>
+        <div class="tabs">
+            <div class="tab active" data-tab="merge">Merge PDFs</div>
+            <div class="tab" data-tab="split">Split PDF</div>
         </div>
         
-        <button id="mergeBtn" onclick="mergePdfs()">Merge PDFs</button>
-        
-        <div id="status"></div>
-        <div id="downloadLinkContainer"></div>
-    </div>
+        <!-- Merge PDFs Tab -->
+        <div id="mergeTab" class="tab-content active">
+            <div class="file-input-area" id="mergeFileDropArea">
+                <label for="pdfFilesInputMerge">Drag & Drop PDF files here, or click to select</label>
+                <input type="file" id="pdfFilesInputMerge" accept=".pdf" multiple>
+                <span class="file-input-button" onclick="document.getElementById('pdfFilesInputMerge').click()">Choose Files</span>
+            </div>
 
-    <script>
-        const fileInput = document.getElementById('pdfFilesInput');
-        const filePreviewContainer = document.getElementById('filePreviewContainer');
-        const fileDropArea = document.getElementById('fileDropArea');
-        const statusDiv = document.getElementById('status');
-        const downloadLinkContainer = document.getElementById('downloadLinkContainer');
+            <div id="mergeFilePreviewContainer">
+                <p style="text-align: center; color: #6c757d;">Selected files will appear here. Drag to reorder.</p>
+            </div>
+            
+            <button id="mergeBtn" class="action-button" onclick="mergePdfs()">Merge PDFs</button>
+            
+            <div id="mergeStatus" class="status"></div>
+            <div id="mergeDownloadLinkContainer" class="downloadLinkContainer"></div>
+        </div>
         
-        let selectedFilesArray = [];
-        let draggedItem = null;
+        <!-- Split PDF Tab -->
+        <div id="splitTab" class="tab-content">
+            <div class="file-input-area" id="splitFileDropArea">
+                <label for="pdfFileInputSplit">Drag & Drop a PDF file here, or click to select</label>
+                <input type="file" id="pdfFileInputSplit" accept=".pdf">
+                <span class="file-input-button" onclick="document.getElementById('pdfFileInputSplit').click()">Choose File</span>
+            </div>
+            
+            <div id="splitFileInfo" style="text-align: center; margin-top: 10px; display: none;">
+                <p><strong>File:</strong> <span id="splitFileName"></span></p>
+                <p><strong>Pages:</strong> <span id="splitTotalPages"></span></p>
+            </div>
 
-        fileInput.addEventListener('change', handleFileSelect);
-        
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-        ['dragenter', 'dragover'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, () => fileDropArea.classList.add('drop-zone-active'), false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            fileDropArea.addEventListener(eventName, () => fileDropArea.classList.remove('drop-zone-active'), false);
-        });
-        fileDropArea.addEventListener('drop', handleDrop, false);
-
+            <div class="page-selection-options" id="pageSelectionOptions" style="display: none;">
+                <div class="option-group">
+                    <div class="option-label">Select pages:</div>
+                    <div class="radio-option">
+                        <input type="radio" id="allPages" name="pageSelection" value="all" checked>
+                        <label for="allPages">All</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="oddPages" name="pageSelection" value="odd">
+                        <label for="oddPages">Odd only</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="evenPages" name="pageSelection" value="even">
+                        <label for="evenPages">Even only</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="customPages" name="pageSelection" value="custom">
+                        <label for="customPages">Custom</label>
+                    </div>
+                </div>
+                
+                <div class="option-group" id="customRangeGroup" style="display: none;">
+                    <div class="option-label">Custom range:</div>
+                    <input type="text" id="customRangeInput" placeholder="e.g., 1-3,5,7-9">
+                </div>
+            </div>
+            
+            <div class="pdf-page-preview" id="pdfPagePreview"></div>
+            
+            <button id="splitBtn" class="action-button" style="display: none;" onclick="splitPdf()">Split PDF</button>
+            
+            <div id="splitStatus" class="status"></div>
+            <div id="splitDownloadLinkContainer" class="downloadLinkContainer"></div>
+        </div>
+    </div>    <script>
+        // Common functions
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
         }
 
-        function handleDrop(e) {
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId + 'Tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // ========= MERGE PDFS FUNCTIONALITY =========
+        const mergeFileInput = document.getElementById('pdfFilesInputMerge');
+        const mergeFilePreviewContainer = document.getElementById('mergeFilePreviewContainer');
+        const mergeFileDropArea = document.getElementById('mergeFileDropArea');
+        const mergeStatusDiv = document.getElementById('mergeStatus');
+        const mergeDownloadLinkContainer = document.getElementById('mergeDownloadLinkContainer');
+        
+        let selectedMergeFilesArray = [];
+        let draggedItem = null;
+
+        mergeFileInput.addEventListener('change', handleMergeFileSelect);
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            mergeFileDropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            mergeFileDropArea.addEventListener(eventName, () => mergeFileDropArea.classList.add('drop-zone-active'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            mergeFileDropArea.addEventListener(eventName, () => mergeFileDropArea.classList.remove('drop-zone-active'), false);
+        });
+        mergeFileDropArea.addEventListener('drop', handleMergeDrop, false);
+
+        function handleMergeDrop(e) {
             const dt = e.dataTransfer;
             const files = dt.files;
-            fileInput.files = files;
-            handleFileSelect({ target: fileInput });
+            mergeFileInput.files = files;
+            handleMergeFileSelect({ target: mergeFileInput });
         }
 
-        function handleFileSelect(event) {
+        function handleMergeFileSelect(event) {
             const newFiles = Array.from(event.target.files);
             newFiles.forEach(file => {
-                if (file.type === "application/pdf" && !selectedFilesArray.find(f => f.name === file.name && f.lastModified === file.lastModified)) {
-                    selectedFilesArray.push(file);
+                if (file.type === "application/pdf" && !selectedMergeFilesArray.find(f => f.name === file.name && f.lastModified === file.lastModified)) {
+                    selectedMergeFilesArray.push(file);
                 }
             });
-            renderFilePreviews();
+            renderMergeFilePreviews();
             event.target.value = null;
         }
 
-        function renderFilePreviews() {
-            filePreviewContainer.innerHTML = '';
-            if (selectedFilesArray.length === 0) {
-                filePreviewContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">Selected files will appear here. Drag to reorder.</p>';
+        function renderMergeFilePreviews() {
+            mergeFilePreviewContainer.innerHTML = '';
+            if (selectedMergeFilesArray.length === 0) {
+                mergeFilePreviewContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">Selected files will appear here. Drag to reorder.</p>';
                 return;
             }
 
-            selectedFilesArray.forEach((file, index) => {
+            selectedMergeFilesArray.forEach((file, index) => {
                 const previewItem = document.createElement('div');
                 previewItem.classList.add('file-preview-item');
                 previewItem.setAttribute('draggable', 'true');
@@ -220,7 +400,7 @@
                 removeBtn.innerHTML = '&times;';
                 removeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    removeFile(index);
+                    removeMergeFile(index);
                 });
                 previewItem.appendChild(removeBtn);
 
@@ -229,13 +409,13 @@
                 previewItem.addEventListener('drop', handleDropOnItem);
                 previewItem.addEventListener('dragend', handleDragEnd);
                 
-                filePreviewContainer.appendChild(previewItem);
+                mergeFilePreviewContainer.appendChild(previewItem);
             });
         }
 
-        function removeFile(index) {
-            selectedFilesArray.splice(index, 1);
-            renderFilePreviews();
+        function removeMergeFile(index) {
+            selectedMergeFilesArray.splice(index, 1);
+            renderMergeFilePreviews();
         }
 
         function handleDragStart(e) {
@@ -252,6 +432,7 @@
             e.dataTransfer.dropEffect = 'move';
             const targetItem = e.target.closest('.file-preview-item');
             if (targetItem && targetItem !== draggedItem) {
+                // Visual feedback could be added here
             }
             return false;
         }
@@ -264,10 +445,10 @@
                 const fromIndex = parseInt(draggedItem.getAttribute('data-index'));
                 const toIndex = parseInt(targetItem.getAttribute('data-index'));
                 
-                const [movedItem] = selectedFilesArray.splice(fromIndex, 1);
-                selectedFilesArray.splice(toIndex, 0, movedItem);
+                const [movedItem] = selectedMergeFilesArray.splice(fromIndex, 1);
+                selectedMergeFilesArray.splice(toIndex, 0, movedItem);
             }
-            renderFilePreviews();
+            renderMergeFilePreviews();
             return false;
         }
         
@@ -278,20 +459,20 @@
         }
 
         async function mergePdfs() {
-            statusDiv.textContent = 'Merging...';
-            downloadLinkContainer.innerHTML = '';
+            mergeStatusDiv.textContent = 'Merging...';
+            mergeDownloadLinkContainer.innerHTML = '';
 
-            if (selectedFilesArray.length < 1) {
-                statusDiv.textContent = 'Please select at least one PDF file.';
+            if (selectedMergeFilesArray.length < 1) {
+                mergeStatusDiv.textContent = 'Please select at least one PDF file.';
                 return;
             }
-             if (selectedFilesArray.length === 1) {
-                statusDiv.textContent = 'Please select at least two PDF files to merge.';
+            if (selectedMergeFilesArray.length === 1) {
+                mergeStatusDiv.textContent = 'Please select at least two PDF files to merge.';
                 return;
             }
 
             const formData = new FormData();
-            selectedFilesArray.forEach(file => {
+            selectedMergeFilesArray.forEach(file => {
                 formData.append('files', file, file.name);
             });
 
@@ -308,8 +489,8 @@
                     a.href = downloadUrl;
                     a.download = 'merged.pdf';
                     a.textContent = 'Download Merged PDF';
-                    downloadLinkContainer.appendChild(a);
-                    statusDiv.textContent = 'Merge successful! Click the link to download.';
+                    mergeDownloadLinkContainer.appendChild(a);
+                    mergeStatusDiv.textContent = 'Merge successful! Click the link to download.';
                 } else {
                     const errorText = await response.text();
                     let displayError = errorText;
@@ -326,10 +507,385 @@
                             }
                         } catch(e) { }
                     }
-                    statusDiv.textContent = `Error merging PDFs: ${response.status} ${displayError}`;
+                    mergeStatusDiv.textContent = `Error merging PDFs: ${response.status} ${displayError}`;
                 }
             } catch (error) {
-                statusDiv.textContent = `An error occurred: ${error}`;
+                mergeStatusDiv.textContent = `An error occurred: ${error}`;
+            }
+        }
+
+        // ========= SPLIT PDF FUNCTIONALITY =========
+        const splitFileInput = document.getElementById('pdfFileInputSplit');
+        const splitFileDropArea = document.getElementById('splitFileDropArea');
+        const splitStatusDiv = document.getElementById('splitStatus');
+        const splitDownloadLinkContainer = document.getElementById('splitDownloadLinkContainer');
+        const pdfPagePreview = document.getElementById('pdfPagePreview');
+        const splitBtn = document.getElementById('splitBtn');
+        const pageSelectionOptions = document.getElementById('pageSelectionOptions');
+        const splitFileInfo = document.getElementById('splitFileInfo');
+        const splitFileName = document.getElementById('splitFileName');
+        const splitTotalPages = document.getElementById('splitTotalPages');
+        const customRangeGroup = document.getElementById('customRangeGroup');
+        const customRangeInput = document.getElementById('customRangeInput');
+        
+        let selectedSplitFile = null;
+        let totalPdfPages = 0;
+        let selectedPages = new Set();
+        
+        // Set up page selection radio buttons event listeners
+        document.querySelectorAll('input[name="pageSelection"]').forEach(radio => {
+            radio.addEventListener('change', handlePageSelectionChange);
+        });
+        
+        function handlePageSelectionChange() {
+            const selection = document.querySelector('input[name="pageSelection"]:checked').value;
+            
+            // Show/hide custom range input
+            if (selection === 'custom') {
+                customRangeGroup.style.display = 'flex';
+            } else {
+                customRangeGroup.style.display = 'none';
+            }
+            
+            // Update page selections in the preview
+            updatePageSelections(selection);
+        }
+        
+        function updatePageSelections(selection) {
+            selectedPages.clear();
+            
+            if (selection === 'all') {
+                for (let i = 1; i <= totalPdfPages; i++) {
+                    selectedPages.add(i);
+                }
+            } else if (selection === 'odd') {
+                for (let i = 1; i <= totalPdfPages; i += 2) {
+                    selectedPages.add(i);
+                }
+            } else if (selection === 'even') {
+                for (let i = 2; i <= totalPdfPages; i += 2) {
+                    selectedPages.add(i);
+                }
+            } else if (selection === 'custom') {
+                parseCustomRange(customRangeInput.value);
+            }
+            
+            // Update UI to reflect selection
+            updatePagePreviewSelection();
+            
+            // Update custom range input text if needed
+            if (selection !== 'custom') {
+                updateCustomRangeText();
+            }
+        }
+        
+        function parseCustomRange(rangeText) {
+            if (!rangeText.trim()) return;
+            
+            const parts = rangeText.split(',');
+            parts.forEach(part => {
+                part = part.trim();
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(n => parseInt(n, 10));
+                    if (!isNaN(start) && !isNaN(end)) {
+                        for (let i = start; i <= end && i <= totalPdfPages; i++) {
+                            if (i > 0) selectedPages.add(i);
+                        }
+                    }
+                } else {
+                    const page = parseInt(part, 10);
+                    if (!isNaN(page) && page > 0 && page <= totalPdfPages) {
+                        selectedPages.add(page);
+                    }
+                }
+            });
+        }
+        
+        function updateCustomRangeText() {
+            if (selectedPages.size === 0) {
+                customRangeInput.value = '';
+                return;
+            }
+            
+            // Convert selected pages to a more concise range representation
+            const pageArray = Array.from(selectedPages).sort((a, b) => a - b);
+            let ranges = [];
+            let rangeStart = pageArray[0];
+            let rangeEnd = pageArray[0];
+            
+            for (let i = 1; i < pageArray.length; i++) {
+                if (pageArray[i] === rangeEnd + 1) {
+                    rangeEnd = pageArray[i];
+                } else {
+                    if (rangeStart === rangeEnd) {
+                        ranges.push(`${rangeStart}`);
+                    } else {
+                        ranges.push(`${rangeStart}-${rangeEnd}`);
+                    }
+                    rangeStart = rangeEnd = pageArray[i];
+                }
+            }
+            
+            if (rangeStart === rangeEnd) {
+                ranges.push(`${rangeStart}`);
+            } else {
+                ranges.push(`${rangeStart}-${rangeEnd}`);
+            }
+            
+            customRangeInput.value = ranges.join(',');
+        }
+        
+        // Update page selections when custom range input changes
+        customRangeInput.addEventListener('input', function() {
+            if (document.querySelector('input[name="pageSelection"]:checked').value === 'custom') {
+                selectedPages.clear();
+                parseCustomRange(this.value);
+                updatePagePreviewSelection();
+            }
+        });
+        
+        // Set up split file input event listeners
+        splitFileInput.addEventListener('change', handleSplitFileSelect);
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            splitFileDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            splitFileDropArea.addEventListener(eventName, () => splitFileDropArea.classList.add('drop-zone-active'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            splitFileDropArea.addEventListener(eventName, () => splitFileDropArea.classList.remove('drop-zone-active'), false);
+        });
+        
+        splitFileDropArea.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0 && files[0].type === "application/pdf") {
+                splitFileInput.files = files;
+                handleSplitFileSelect({ target: splitFileInput });
+            }
+        });
+        
+        async function handleSplitFileSelect(event) {
+            if (event.target.files.length > 0) {
+                const file = event.target.files[0];
+                if (file.type === "application/pdf") {
+                    selectedSplitFile = file;
+                    splitStatusDiv.textContent = 'Loading PDF...';
+                    splitDownloadLinkContainer.innerHTML = '';
+                    
+                    try {
+                        // Get PDF info using our preview endpoint
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const response = await fetch('/preview', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                totalPdfPages = data.totalPages;
+                                
+                                // Update UI with file info
+                                splitFileName.textContent = file.name;
+                                splitTotalPages.textContent = totalPdfPages;
+                                splitFileInfo.style.display = 'block';
+                                
+                                // Show page selection options
+                                pageSelectionOptions.style.display = 'block';
+                                
+                                // Generate page previews
+                                generatePagePreviews();
+                                
+                                // Select all pages by default
+                                document.getElementById('allPages').checked = true;
+                                handlePageSelectionChange();
+                                
+                                // Show the split button
+                                splitBtn.style.display = 'block';
+                                
+                                splitStatusDiv.textContent = '';
+                            } else {
+                                splitStatusDiv.textContent = data.error || 'Error previewing PDF';
+                            }
+                        } else {
+                            splitStatusDiv.textContent = `Error: ${response.status}`;
+                        }
+                    } catch (error) {
+                        splitStatusDiv.textContent = `An error occurred: ${error}`;
+                    }
+                } else {
+                    splitStatusDiv.textContent = 'Please select a PDF file.';
+                }
+                event.target.value = null;
+            }
+        }
+        
+        function generatePagePreviews() {
+            pdfPagePreview.innerHTML = '';
+            
+            for (let i = 1; i <= totalPdfPages; i++) {
+                const thumbnail = document.createElement('div');
+                thumbnail.classList.add('page-thumbnail');
+                thumbnail.setAttribute('data-page', i);
+                
+                // Add preview placeholder
+                const preview = document.createElement('div');
+                preview.classList.add('page-preview');
+                preview.textContent = `Page ${i}`;
+                thumbnail.appendChild(preview);
+                
+                // Add page number
+                const pageNum = document.createElement('div');
+                pageNum.classList.add('page-thumbnail-number');
+                pageNum.textContent = i;
+                thumbnail.appendChild(pageNum);
+                
+                // Add checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.classList.add('page-checkbox');
+                checkbox.checked = true; // Initially select all pages
+                checkbox.addEventListener('change', function() {
+                    const pageNum = parseInt(thumbnail.getAttribute('data-page'));
+                    if (this.checked) {
+                        selectedPages.add(pageNum);
+                    } else {
+                        selectedPages.delete(pageNum);
+                    }
+                    
+                    // Switch to custom selection mode
+                    document.getElementById('customPages').checked = true;
+                    customRangeGroup.style.display = 'flex';
+                    
+                    // Update custom range text
+                    updateCustomRangeText();
+                });
+                thumbnail.appendChild(checkbox);
+                
+                // Make the whole thumbnail clickable
+                thumbnail.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) { // Prevent double-toggling when clicking on checkbox
+                        checkbox.checked = !checkbox.checked;
+                        
+                        // Trigger change event manually
+                        const event = new Event('change');
+                        checkbox.dispatchEvent(event);
+                    }
+                });
+                
+                // Add shift-click functionality for range selection
+                thumbnail.addEventListener('click', function(e) {
+                    if (e.shiftKey && lastClickedPage) {
+                        const currentPage = parseInt(this.getAttribute('data-page'));
+                        const startPage = Math.min(currentPage, lastClickedPage);
+                        const endPage = Math.max(currentPage, lastClickedPage);
+                        
+                        // Get the checked state from the last clicked page
+                        const shouldCheck = document.querySelector(`.page-thumbnail[data-page="${lastClickedPage}"] .page-checkbox`).checked;
+                        
+                        // Apply the same checked state to all pages in range
+                        for (let p = startPage; p <= endPage; p++) {
+                            const pageThumb = document.querySelector(`.page-thumbnail[data-page="${p}"]`);
+                            const pageCheck = pageThumb.querySelector('.page-checkbox');
+                            pageCheck.checked = shouldCheck;
+                            
+                            if (shouldCheck) {
+                                selectedPages.add(p);
+                            } else {
+                                selectedPages.delete(p);
+                            }
+                        }
+                        
+                        // Switch to custom selection mode
+                        document.getElementById('customPages').checked = true;
+                        customRangeGroup.style.display = 'flex';
+                        updateCustomRangeText();
+                    }
+                    
+                    // Store this page as the last clicked page (unless it was just the checkbox)
+                    if (e.target !== checkbox) {
+                        lastClickedPage = parseInt(this.getAttribute('data-page'));
+                    }
+                });
+                
+                // Add ctrl/cmd-click functionality for non-contiguous selection
+                document.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey || e.metaKey) {
+                        document.body.classList.add('multi-select-mode');
+                    }
+                });
+                
+                document.addEventListener('keyup', function(e) {
+                    if (!e.ctrlKey && !e.metaKey) {
+                        document.body.classList.remove('multi-select-mode');
+                    }
+                });
+                
+                pdfPagePreview.appendChild(thumbnail);
+            }
+        }
+        
+        let lastClickedPage = null;
+        
+        function updatePagePreviewSelection() {
+            document.querySelectorAll('.page-thumbnail').forEach(thumbnail => {
+                const pageNum = parseInt(thumbnail.getAttribute('data-page'));
+                const checkbox = thumbnail.querySelector('.page-checkbox');
+                checkbox.checked = selectedPages.has(pageNum);
+            });
+        }
+        
+        async function splitPdf() {
+            if (!selectedSplitFile) {
+                splitStatusDiv.textContent = 'Please select a PDF file first.';
+                return;
+            }
+            
+            if (selectedPages.size === 0) {
+                splitStatusDiv.textContent = 'Please select at least one page to extract.';
+                return;
+            }
+            
+            splitStatusDiv.textContent = 'Processing...';
+            splitDownloadLinkContainer.innerHTML = '';
+            
+            const formData = new FormData();
+            formData.append('file', selectedSplitFile);
+            
+            // Get the selected page mode
+            const pageSelection = document.querySelector('input[name="pageSelection"]:checked').value;
+            formData.append('pageSelection', pageSelection);
+            
+            // If custom mode, add the custom range
+            if (pageSelection === 'custom') {
+                formData.append('customRange', customRangeInput.value);
+            }
+            
+            try {
+                const response = await fetch('/split', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'split.pdf';
+                    a.textContent = 'Download Split PDF';
+                    splitDownloadLinkContainer.appendChild(a);
+                    splitStatusDiv.textContent = 'PDF split successful! Click the link to download.';
+                } else {
+                    const errorText = await response.text();
+                    splitStatusDiv.textContent = `Error splitting PDF: ${response.status} ${errorText}`;
+                }
+            } catch (error) {
+                splitStatusDiv.textContent = `An error occurred: ${error}`;
             }
         }
     </script>
