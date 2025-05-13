@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file, render_template_string, jsonify
 from pypdf import PdfWriter, PdfReader
+from pypdf.pagerange import PageRange
 import io
 import os
 import re
@@ -98,34 +99,40 @@ def split_pdf_route():
     try:
         # Read the PDF file
         reader = PdfReader(temp_file_path)
-        total_pages = len(reader.pages)
         writer = PdfWriter()
         
-        # Process page selection
-        selected_pages = []
-        
+        # Use PageRange class to handle different page selections
         if page_selection == 'all':
-            selected_pages = list(range(total_pages))
+            # Use all pages
+            writer.append(fileobj=reader)
         elif page_selection == 'odd':
-            selected_pages = list(range(0, total_pages, 2))
+            # Get odd pages (0-indexed, so 0, 2, 4, etc.)
+            page_range = PageRange("::2")
+            writer.append(fileobj=reader, pages=page_range)
         elif page_selection == 'even':
-            selected_pages = list(range(1, total_pages, 2))
+            # Get even pages (0-indexed, so 1, 3, 5, etc.)
+            page_range = PageRange("1::2")
+            writer.append(fileobj=reader, pages=page_range)
         elif page_selection == 'custom' and custom_range:
-            # Process the custom range string (e.g. "1-4,7,9-10")
-            # Convert to 0-indexed
+            # Convert the 1-indexed custom range (from UI) to 0-indexed (for pypdf)
+            zero_indexed_ranges = []
             for part in custom_range.split(','):
                 if '-' in part:
                     start, end = map(int, part.split('-'))
-                    selected_pages.extend(range(start - 1, end))
+                    # Convert to 0-indexed
+                    zero_indexed_ranges.append(f"{start-1}-{end-1}")
                 else:
-                    selected_pages.append(int(part) - 1)
-                    
-            # Filter out pages that are out of range
-            selected_pages = [p for p in selected_pages if 0 <= p < total_pages]
-        
-        # Add selected pages to the writer
-        for page_num in selected_pages:
-            writer.add_page(reader.pages[page_num])
+                    page_num = int(part) - 1  # Convert to 0-indexed
+                    zero_indexed_ranges.append(str(page_num))
+            
+            # Create the page range string and use it
+            page_range_str = ','.join(zero_indexed_ranges)
+            try:
+                page_range = PageRange(page_range_str)
+                writer.append(fileobj=reader, pages=page_range)
+            except Exception as e:
+                app.logger.error(f"Error parsing page range: {e}")
+                return f"Invalid page range: {custom_range}", 400
         
         # Write the output PDF
         output_pdf_stream = io.BytesIO()
